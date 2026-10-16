@@ -99,9 +99,10 @@ def mouse_option(f):
 def calendar_menu_option(f):
     o = click.option(
         "--calendar-menu/--no-calendar-menu",
-        default=True,
+        default=None,
         help=(
-            "Choose which calendars to display in a menu at startup. "
+            "Choose which calendars to display in a menu at startup, overriding "
+            "calendar_menu in the [ikhal] config section. "
             "Skipped when -a, -d or --profile is given."
         ),
     )

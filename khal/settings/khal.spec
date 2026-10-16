@@ -325,13 +325,17 @@ multiple_on_overflow = boolean(default=False)
 # default color.
 default_color = color(default='')
 
-# Calendar profiles for ikhal's startup menu, which asks which calendars to
-# display. Each profile is a named set of calendars that a hotkey loads into
+# ikhal can start with a menu asking which calendars to display, see
+# `calendar_menu`. The menu remembers the calendars chosen with **enter** for
+# the next start, **p** opens ikhal without remembering them.
+#
+# Calendar profiles can be declared for this menu. Each profile is a named set of calendars that a hotkey loads into
 # the menu. Pressing **S** and then a profile's hotkey saves the calendars
 # currently checked in the menu to that profile; the saved selection is stored
 # in *$XDG_DATA_HOME/khal* (most likely *~/.local/share/khal*) and takes
 # precedence over the calendars listed here.
-# `ikhal --profile NAME` opens ikhal on a profile without showing the menu.
+# `ikhal --profile NAME` opens ikhal on a profile, whether or not the menu is
+# enabled.
 #
 # Example:
 #
@@ -340,6 +344,7 @@ default_color = color(default='')
 # ::
 #
 #  [ikhal]
+#  calendar_menu = True
 #  default_profile = pro
 #  [[profiles]]
 #  [[[perso]]]
@@ -352,6 +357,10 @@ default_color = color(default='')
 #  key = 0
 #  calendars = *
 [ikhal]
+
+# Whether ikhal starts with a menu asking which calendars to display. The
+# options `--calendar-menu` and `--no-calendar-menu` override this.
+calendar_menu = boolean(default=False)
 
 # The profile the startup menu starts with. If not set, the menu starts with
 # the calendars chosen the last time ikhal was opened with **enter**.

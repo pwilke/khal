@@ -380,6 +380,8 @@ def _interactive(ctx, include_calendar, exclude_calendar, mouse, calendar_menu, 
         raise click.UsageError("Can't use --profile with -a or -d.")
     selection = multi_calendar_select(ctx, include_calendar, exclude_calendar)
     names = list(conf["calendars"])
+    if calendar_menu is None:
+        calendar_menu = conf["ikhal"]["calendar_menu"]
     if profile is not None:
         selection = _profile_selection(conf, profile, names)
     elif calendar_menu and selection is None and len(names) > 1 and _on_terminal():

@@ -765,26 +765,38 @@ def test_interactive_calendar_menu(runner, monkeypatch, fake_interactive_ui, cmd
     monkeypatch.setattr("khal.ui.calendar_select.select_calendars", fake_menu)
     main = main_khal if cmd else main_ikhal
 
+    # disabled by default
     result = runner.invoke(main, cmd)
+    assert not result.exception, result.output
+    assert menu_calls == []
+    assert fake_interactive_ui["calendars"] == {"one", "two", "three"}
+
+    result = runner.invoke(main, cmd + ["--calendar-menu"])
     assert not result.exception, result.output
     assert menu_calls == [["one", "two", "three"]]
     assert fake_interactive_ui["calendars"] == {"two"}
 
+    runner.config_file.write("[ikhal]\ncalendar_menu = True\n", mode="a")
+    result = runner.invoke(main, cmd)
+    assert not result.exception, result.output
+    assert len(menu_calls) == 2
+    assert fake_interactive_ui["calendars"] == {"two"}
+
     result = runner.invoke(main, cmd + ["--no-calendar-menu"])
     assert not result.exception, result.output
-    assert len(menu_calls) == 1
+    assert len(menu_calls) == 2
     assert fake_interactive_ui["calendars"] == {"one", "two", "three"}
 
     result = runner.invoke(main, cmd + ["-d", "one"])
     assert not result.exception, result.output
-    assert len(menu_calls) == 1
+    assert len(menu_calls) == 2
     assert fake_interactive_ui["calendars"] == {"two", "three"}
 
 
 def test_interactive_calendar_menu_quit(runner, monkeypatch, fake_interactive_ui):
     runner = runner(days=2)
     monkeypatch.setattr("khal.ui.calendar_select.select_calendars", lambda conf, names: None)
-    result = runner.invoke(main_ikhal, [])
+    result = runner.invoke(main_ikhal, ["--calendar-menu"])
     assert result.exit_code == 0
     assert fake_interactive_ui == {}
 
