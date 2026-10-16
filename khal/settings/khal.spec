@@ -325,6 +325,50 @@ multiple_on_overflow = boolean(default=False)
 # default color.
 default_color = color(default='')
 
+# Calendar profiles for ikhal's startup menu, which asks which calendars to
+# display. Each profile is a named set of calendars that a hotkey loads into
+# the menu. Pressing **S** and then a profile's hotkey saves the calendars
+# currently checked in the menu to that profile; the saved selection is stored
+# in *$XDG_DATA_HOME/khal* (most likely *~/.local/share/khal*) and takes
+# precedence over the calendars listed here.
+# `ikhal --profile NAME` opens ikhal on a profile without showing the menu.
+#
+# Example:
+#
+# .. highlight:: ini
+#
+# ::
+#
+#  [ikhal]
+#  default_profile = pro
+#  [[profiles]]
+#  [[[perso]]]
+#  key = 1
+#  calendars = perso, family
+#  [[[pro]]]
+#  key = 2
+#  calendars = work, seminars
+#  [[[all]]]
+#  key = 0
+#  calendars = *
+[ikhal]
+
+# The profile the startup menu starts with. If not set, the menu starts with
+# the calendars chosen the last time ikhal was opened with **enter**.
+default_profile = string(default=None)
+
+[[profiles]]
+
+[[[__many__]]]
+
+# The key that loads this profile in the startup menu. The keys space, enter,
+# esc, a, p, q, S and the arrow keys are used by the menu itself.
+key = string(default=None)
+
+# The calendars this profile shows, until a selection is saved to it from the
+# menu. Use `*` for all calendars.
+calendars = force_list(default=list())
+
 # Override ikhal's color theme with a custom palette. This is useful to style
 # certain elements of ikhal individually.
 # Palette entries take the form of `key = foreground, background, mono,

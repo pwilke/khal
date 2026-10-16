@@ -96,6 +96,23 @@ def mouse_option(f):
     return o(f)
 
 
+def calendar_menu_option(f):
+    o = click.option(
+        "--calendar-menu/--no-calendar-menu",
+        default=True,
+        help=(
+            "Choose which calendars to display in a menu at startup. "
+            "Skipped when -a, -d or --profile is given."
+        ),
+    )
+    p = click.option(
+        "--profile",
+        metavar="PROFILE",
+        help="Display the calendars of this profile from the [ikhal] config section.",
+    )
+    return p(o(f))
+
+
 def _select_one_calendar_callback(ctx, option, calendar):
     if isinstance(calendar, tuple):
         if len(calendar) > 1:

@@ -740,6 +740,94 @@ def test_interactive_command(runner, monkeypatch):
     assert result.output.strip() == token
 
 
+@pytest.fixture
+def fake_interactive_ui(monkeypatch):
+    """Pretend to be on a terminal, record the calendars ikhal would show."""
+    shown = {}
+
+    def fake_interactive(collection, conf):
+        shown["calendars"] = set(collection.names)
+
+    monkeypatch.setattr("khal.controllers.interactive", fake_interactive)
+    monkeypatch.setattr("khal.cli._on_terminal", lambda: True)
+    return shown
+
+
+@pytest.mark.parametrize("cmd", [[], ["interactive"]])
+def test_interactive_calendar_menu(runner, monkeypatch, fake_interactive_ui, cmd):
+    runner = runner(days=2)
+    menu_calls = []
+
+    def fake_menu(conf, names):
+        menu_calls.append(names)
+        return {"two"}
+
+    monkeypatch.setattr("khal.ui.calendar_select.select_calendars", fake_menu)
+    main = main_khal if cmd else main_ikhal
+
+    result = runner.invoke(main, cmd)
+    assert not result.exception, result.output
+    assert menu_calls == [["one", "two", "three"]]
+    assert fake_interactive_ui["calendars"] == {"two"}
+
+    result = runner.invoke(main, cmd + ["--no-calendar-menu"])
+    assert not result.exception, result.output
+    assert len(menu_calls) == 1
+    assert fake_interactive_ui["calendars"] == {"one", "two", "three"}
+
+    result = runner.invoke(main, cmd + ["-d", "one"])
+    assert not result.exception, result.output
+    assert len(menu_calls) == 1
+    assert fake_interactive_ui["calendars"] == {"two", "three"}
+
+
+def test_interactive_calendar_menu_quit(runner, monkeypatch, fake_interactive_ui):
+    runner = runner(days=2)
+    monkeypatch.setattr("khal.ui.calendar_select.select_calendars", lambda conf, names: None)
+    result = runner.invoke(main_ikhal, [])
+    assert result.exit_code == 0
+    assert fake_interactive_ui == {}
+
+
+PROFILES = """
+[ikhal]
+[[profiles]]
+[[[duo]]]
+key = 1
+calendars = one, three
+[[[empty]]]
+calendars = nope
+"""
+
+
+@pytest.mark.parametrize("cmd", [[], ["interactive"]])
+def test_interactive_profile_option(runner, monkeypatch, fake_interactive_ui, cmd):
+    runner = runner(days=2)
+    runner.config_file.write(PROFILES, mode="a")
+
+    def no_menu(conf, names):
+        raise AssertionError("menu shown")
+
+    monkeypatch.setattr("khal.ui.calendar_select.select_calendars", no_menu)
+    main = main_khal if cmd else main_ikhal
+
+    result = runner.invoke(main, cmd + ["--profile", "duo"])
+    assert not result.exception, result.output
+    assert fake_interactive_ui["calendars"] == {"one", "three"}
+
+    result = runner.invoke(main, cmd + ["--profile", "nope"])
+    assert result.exit_code == 2
+    assert "Unknown profile nope (profiles: duo, empty)" in result.output
+
+    result = runner.invoke(main, cmd + ["--profile", "empty"])
+    assert result.exit_code == 2
+    assert "selects no configured calendar" in result.output
+
+    result = runner.invoke(main, cmd + ["--profile", "duo", "-a", "two"])
+    assert result.exit_code == 2
+    assert "Can't use --profile with -a or -d" in result.output
+
+
 def test_color_option(runner):
     runner = runner(days=2)
 

@@ -12,6 +12,11 @@ may want to subscribe to `GitHub's tag feed
 unreleased
 * FIX ``khal import --format``/``-f`` was accepted and then ignored, always
   falling back to ``view.event_format``
+* NEW ikhal starts with a menu to choose which calendars to display, it
+  remembers the last choice; ``--no-calendar-menu`` skips it
+* NEW calendar profiles in the new ``[ikhal]`` config section, loaded and
+  saved from the startup menu with hotkeys, or opened directly with
+  ``ikhal --profile NAME``
 
 0.14.1
 ======

@@ -34,6 +34,7 @@ from . import controllers, plugins
 from .cli_utils import (
     _select_one_calendar_callback,
     build_collection,
+    calendar_menu_option,
     calendar_option,
     global_options,
     logger,
@@ -354,38 +355,62 @@ def import_ics(ctx, ics, include_calendar, batch, random_uid, format):
     sys.exit(rvalue)
 
 
+def _on_terminal():
+    return sys.stdin.isatty() and sys.stdout.isatty()
+
+
+def _profile_selection(conf, name, names):
+    from . import calendar_profiles
+
+    profiles = calendar_profiles.get_profiles(conf)
+    if name not in profiles:
+        known = ", ".join(profiles) or "none configured"
+        raise click.BadParameter(f"Unknown profile {name} (profiles: {known}).")
+    selection = calendar_profiles.profile_selection(conf, profiles[name], names)
+    if not selection:
+        raise click.BadParameter(f"Profile {name} selects no configured calendar.")
+    return selection
+
+
+def _interactive(ctx, include_calendar, exclude_calendar, mouse, calendar_menu, profile):
+    conf = ctx.obj["conf"]
+    if mouse is not None:
+        conf["default"]["enable_mouse"] = mouse
+    if profile is not None and (include_calendar or exclude_calendar):
+        raise click.UsageError("Can't use --profile with -a or -d.")
+    selection = multi_calendar_select(ctx, include_calendar, exclude_calendar)
+    names = list(conf["calendars"])
+    if profile is not None:
+        selection = _profile_selection(conf, profile, names)
+    elif calendar_menu and selection is None and len(names) > 1 and _on_terminal():
+        from .ui.calendar_select import select_calendars
+
+        selection = select_calendars(conf, names)
+        if selection is None:
+            sys.exit(0)
+    controllers.interactive(build_collection(conf, selection), conf)
+
+
 @cli.command()
 @multi_calendar_option
 @mouse_option
+@calendar_menu_option
 @click.pass_context
-def interactive(ctx, include_calendar, exclude_calendar, mouse):
+def interactive(ctx, include_calendar, exclude_calendar, mouse, calendar_menu, profile):
     """Interactive UI. Also launchable via `ikhal`."""
-    if mouse is not None:
-        ctx.obj["conf"]["default"]["enable_mouse"] = mouse
-    controllers.interactive(
-        build_collection(
-            ctx.obj["conf"], multi_calendar_select(ctx, include_calendar, exclude_calendar)
-        ),
-        ctx.obj["conf"],
-    )
+    _interactive(ctx, include_calendar, exclude_calendar, mouse, calendar_menu, profile)
 
 
 @click.command()
 @global_options
 @multi_calendar_option
 @mouse_option
+@calendar_menu_option
 @click.pass_context
-def interactive_cli(ctx, config, include_calendar, exclude_calendar, mouse):
+def interactive_cli(ctx, config, include_calendar, exclude_calendar, mouse, calendar_menu, profile):
     """Interactive UI. Also launchable via `khal interactive`."""
     prepare_context(ctx, config)
-    if mouse is not None:
-        ctx.obj["conf"]["default"]["enable_mouse"] = mouse
-    controllers.interactive(
-        build_collection(
-            ctx.obj["conf"], multi_calendar_select(ctx, include_calendar, exclude_calendar)
-        ),
-        ctx.obj["conf"],
-    )
+    _interactive(ctx, include_calendar, exclude_calendar, mouse, calendar_menu, profile)
 
 
 @cli.command()
