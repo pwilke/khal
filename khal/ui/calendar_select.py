@@ -27,8 +27,9 @@ from collections.abc import Callable, Iterable
 
 import urwid
 
-from .. import calendar_profiles
-from ..calendar_profiles import Profile
+from khal import calendar_profiles
+from khal.calendar_profiles import Profile
+
 from . import _urwid_palette_entry
 
 HELP = (

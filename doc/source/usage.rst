@@ -419,6 +419,37 @@ Pressing :kbd:`esc` will cancel the current action and/or take you back to the
 previously shown pane (i.e. what you see when you open ikhal), if you are at the
 start pane, ikhal will quit on pressing :kbd:`esc` again.
 
+If ``calendar_menu`` is set to True in the ``[ikhal]`` section of the config
+file, ikhal starts with a menu asking which calendars to display. In this menu,
+you can
+
+* check or uncheck the focused calendar with :kbd:`space`, or all calendars
+  with :kbd:`a`
+* open ikhal with :kbd:`enter`, the checked calendars will be checked again
+  the next time the menu is shown
+* open ikhal with :kbd:`p` (as in peek), without remembering the checked
+  calendars
+* quit with :kbd:`q` or :kbd:`esc`
+* load a profile, a named set of calendars configured in the ``[ikhal]``
+  section, with its key
+* save the checked calendars to a profile with :kbd:`S` followed by the
+  profile's key, the saved selection takes precedence over the calendars
+  configured for that profile
+
+The menu is not shown if :option:`-a`, :option:`-d` or :option:`--profile` are
+used.
+
+.. option:: --calendar-menu, --no-calendar-menu
+
+        Show (or do not show) the menu asking which calendars to display,
+        overriding ``calendar_menu`` in the ``[ikhal]`` section of the config
+        file.
+
+.. option:: --profile PROFILE
+
+        Display the calendars of profile `PROFILE` from the ``[ikhal]``
+        section of the config file, without showing the menu.
+
 
 new
 ***
