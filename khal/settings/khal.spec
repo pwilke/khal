@@ -231,6 +231,23 @@ default_dayevent_alarm = timedelta(default='')
 # 'ikhal' only)
 enable_mouse = boolean(default=True)
 
+# A shell command to run after khal has written to a calendar (new, edited,
+# moved or deleted events), e.g. ``vdirsyncer sync`` to push changes right away.
+# It runs once per changed calendar, with ``KHAL_CALENDAR`` set to the
+# calendar's name and ``KHAL_CALENDAR_PATH`` to its directory (without a
+# trailing slash), so it can sync only that calendar. For example, if your
+# vdirsyncer storages live in ``~/.calendars/<pair>`` (or
+# ``~/.calendars/<pair>/<collection>`` for pairs with several collections),
+# ``post_write_command = 'vdirsyncer sync "${KHAL_CALENDAR_PATH#$HOME/.calendars/}"'``
+# syncs just the calendar that changed. Wrap the value in quotes if it contains
+# ``#``, otherwise everything after the ``#`` is treated as a comment.
+# The command line interface runs it in the foreground, before exiting.
+# ikhal runs it in the background after every change and shows its output in
+# the log pane (the `log` keybinding, **L** by default); failures are also
+# shown in the header. If changes are pending or the command is still running
+# when ikhal quits, ikhal waits for it to finish.
+post_write_command = string(default=None)
+
 
 # The view section contains configuration options that effect the visual appearance
 # when using khal and ikhal.

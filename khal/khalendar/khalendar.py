@@ -46,6 +46,7 @@ from .exceptions import (
     UnsupportedFeatureError,
     UpdateFailed,
 )
+from .hooks import PostWriteHook
 from .vdir import (
     AlreadyExistingError,
     CollectionNotFoundError,
@@ -74,6 +75,7 @@ class CalendarCollection:
         highlight_event_days: bool = False,
         locale: LocaleConfiguration | None = None,
         dbpath: str | None = None,
+        post_write_command: str | None = None,
     ) -> None:
         assert locale
         assert dbpath is not None
@@ -109,6 +111,7 @@ class CalendarCollection:
         self._locale = locale
         self._backend = backend.SQLiteDb(self.names, dbpath, self._locale)
         self._last_ctags: dict[str, str] = {}
+        self.post_write_hook = PostWriteHook(post_write_command)
         self.update_db()
 
     @property
@@ -140,6 +143,9 @@ class CalendarCollection:
             self._default_calendar_name = default
         else:
             raise ValueError(f'Calendar "{default}" is read-only and cannot be used as default')
+
+    def _notify_write(self, calendar: str) -> None:
+        self.post_write_hook.notify(calendar, self._calendars[calendar]["path"])
 
     def _local_ctag(self, calendar: str) -> str:
         return get_etag_from_file(self._calendars[calendar]["path"])
@@ -183,6 +189,7 @@ class CalendarCollection:
             event.etag = self._storages[event.calendar].update(event.href, event, event.etag)
             self._backend.update(event.raw, event.href, event.etag, calendar=event.calendar)
             self._backend.set_ctag(self._local_ctag(event.calendar), calendar=event.calendar)
+        self._notify_write(event.calendar)
 
     def force_update(self, event: Event, collection: str | None = None) -> None:
         """update `event` even if an event with the same uid/href already exists"""
@@ -201,6 +208,7 @@ class CalendarCollection:
                 etag = self._storages[calendar].update(href, event, etag)
             self._backend.update(event.raw, href, etag, calendar=calendar)
             self._backend.set_ctag(self._local_ctag(calendar), calendar=calendar)
+        self._notify_write(calendar)
 
     def insert(self, event: Event, collection: str | None = None) -> None:
         """Insert a new event to the vdir and the database
@@ -229,6 +237,7 @@ class CalendarCollection:
                 raise DuplicateUid(href)
             self._backend.update(event.raw, event.href, event.etag, calendar=calendar)
             self._backend.set_ctag(self._local_ctag(calendar), calendar=calendar)
+        self._notify_write(calendar)
 
     def delete(self, href: str, etag: str | None, calendar: str) -> None:
         """Delete an event specified by `href` from `calendar`"""
@@ -239,6 +248,7 @@ class CalendarCollection:
         except WrongEtagError:
             raise EtagMismatch()
         self._backend.delete(href, calendar=calendar)
+        self._notify_write(calendar)
 
     def delete_instance(
         self,

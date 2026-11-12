@@ -12,6 +12,9 @@ may want to subscribe to `GitHub's tag feed
 unreleased
 * FIX ``khal import --format``/``-f`` was accepted and then ignored, always
   falling back to ``view.event_format``
+* NEW ``[default] post_write_command`` runs a shell command (e.g.
+  ``vdirsyncer sync``) for each calendar khal or ikhal wrote to, with
+  ``KHAL_CALENDAR`` and ``KHAL_CALENDAR_PATH`` set
 
 0.14.1
 ======

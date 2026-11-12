@@ -675,6 +675,7 @@ def interactive(collection, conf):
     """start the interactive user interface"""
     from . import ui
 
+    collection.post_write_hook.start_background()
     pane = ui.ClassicView(collection, conf, title="select an event", description="do something")
     ui.start_pane(
         pane,

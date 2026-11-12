@@ -19,6 +19,7 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
+import atexit
 import logging
 import sys
 
@@ -182,6 +183,7 @@ def build_collection(conf, selection):
             multiple=conf["highlight_days"]["multiple"],
             multiple_on_overflow=conf["highlight_days"]["multiple_on_overflow"],
             highlight_event_days=conf["default"]["highlight_event_days"],
+            post_write_command=conf["default"]["post_write_command"],
         )
     except FatalError as error:
         logger.debug(error, exc_info=True)
@@ -189,6 +191,8 @@ def build_collection(conf, selection):
         sys.exit(1)
 
     collection._default_calendar_name = conf["default"]["default_calendar"]
+    if collection.post_write_hook.command is not None:
+        atexit.register(collection.post_write_hook.close)
     return collection
 
 

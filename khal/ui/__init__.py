@@ -1525,6 +1525,12 @@ def start_pane(
     )
     frame.loop = loop
 
+    # show the output of post_write_command, run in the background, in the log
+    # pane (`log` keybinding); failures are also logged as errors
+    hook = getattr(pane.collection, "post_write_hook", None)
+    if hook is not None:
+        hook.on_output = lambda report: frame.log("INFO: " + report)
+
     def redraw_today(loop, pane, meta=None):
         meta = meta or {"last_today": None}
         # XXX TODO this currently assumes, today moves forward by exactly one
