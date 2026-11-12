@@ -25,11 +25,13 @@ from typing import TYPE_CHECKING, Literal
 
 import urwid
 
+from khal.contacts import query_contacts
 from khal.utils import get_weekday_occurrence, get_wrapped_text
 
 from .calendarwidget import CalendarWidget
 from .widgets import (
     AlarmsEditor,
+    AttendeeEdit,
     CAttrMap,
     Choice,
     CPadding,
@@ -468,9 +470,16 @@ class EventEditor(urwid.WidgetWrap):
             "edit",
             "edit focus",
         )
+        query_command = self._conf["default"].get("attendee_query_command")
         self.attendees = urwid.AttrMap(
-            ExtendedEdit(
-                caption=("caption", "Attendees:   "), edit_text=self.attendees, multiline=True
+            AttendeeEdit(
+                query=(lambda pattern: query_contacts(query_command, pattern))
+                if query_command
+                else None,
+                on_error=lambda msg: self.pane.window.alert(("light red", msg)),
+                caption=("caption", "Attendees:   "),
+                edit_text=self.attendees,
+                multiline=True,
             ),
             "edit",
             "edit focus",

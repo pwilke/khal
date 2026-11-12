@@ -215,6 +215,17 @@ highlight_event_days = boolean(default=False)
 timedelta = timedelta(default='2d')
 
 
+# Command used by ikhal's event editor to complete attendee email addresses.
+# When the cursor is on an address in the *Attendees* field, pressing
+# :kbd:`tab` runs this command and either completes the address (one match) or
+# lets you pick one from a list (several matches). ``{}`` is replaced by the
+# text being completed, if there is no ``{}`` the text is appended as the last
+# argument. The output has to follow the format of mutt's ``query_command``:
+# a first line that is ignored, then one ``<email><TAB><name>`` per line.
+# Examples: ``mu cfind --format=mutt-ab``, ``khard email --parsable`` or
+# ``abook --mutt-query``. If unset, tab only moves to the next field.
+attendee_query_command = string(default=None)
+
 # Define the default duration for an event ('khal new' only)
 default_event_duration = timedelta(default='1h')
 

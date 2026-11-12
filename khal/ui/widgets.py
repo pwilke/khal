@@ -765,3 +765,134 @@ class CPadding(urwid.Padding):
     @property
     def changed(self):
         return self.original_widget.changed
+
+
+def current_address_span(text: str, pos: int) -> tuple[int, int]:
+    """return start and end of the comma separated item under the cursor
+
+    surrounding whitespace is not part of the returned span
+    """
+    start = text.rfind(",", 0, pos) + 1
+    end = text.find(",", pos)
+    if end == -1:
+        end = len(text)
+    while start < end and text[start].isspace():
+        start += 1
+    while end > start and text[end - 1].isspace():
+        end -= 1
+    return start, end
+
+
+class CompletionList(urwid.WidgetWrap):
+    """A list of completion candidates, intended to be used with AttendeeEdit()"""
+
+    signals = ["close"]
+
+    def __init__(self, candidates, on_select) -> None:
+        buttons = [
+            button(
+                str(candidate),
+                attr_map="popupbg",
+                focus_map="popupbg focus",
+                on_press=lambda _, candidate: on_select(candidate),
+                user_data=candidate,
+            )
+            for candidate in candidates
+        ]
+        listbox = urwid.ListBox(urwid.SimpleFocusListWalker(buttons))
+        urwid.WidgetWrap.__init__(self, urwid.AttrMap(listbox, "popupbg"))
+
+    def keypress(self, size, key):
+        if key == "esc":
+            self._emit("close")
+            return
+        key = {"tab": "down", "shift tab": "up", "ctrl n": "down", "ctrl p": "up"}.get(key, key)
+        # keep all other keys inside the pop up
+        super().keypress(size, key)
+
+
+class AttendeeEdit(urwid.PopUpLauncher):
+    """An ExtendedEdit for comma separated email addresses which completes
+    the address under the cursor when pressing `tab`.
+
+    :param query: called with the text to complete, returns a list of
+        `khal.contacts.Contact`; if None, completion is disabled
+    :param on_error: called with a message if `query` raises an Exception
+    """
+
+    max_height = 10
+
+    def __init__(self, query=None, on_error=lambda msg: None, **kwargs) -> None:
+        self._edit = ExtendedEdit(**kwargs)
+        self._query = query
+        self._on_error = on_error
+        self._candidates: list = []
+        self._span = (0, 0)
+        self._pop_up_params: dict[str, int] = {}
+        super().__init__(self._edit)
+
+    def get_edit_text(self) -> str:
+        return self._edit.get_edit_text()
+
+    def keypress(self, size, key):
+        if key == "tab" and self._query is not None and self._complete(size):
+            return None
+        return super().keypress(size, key)
+
+    def _complete(self, size) -> bool:
+        """try to complete the address under the cursor
+
+        :returns: True if the key press was consumed
+        """
+        text = self._edit.get_edit_text()
+        start, end = current_address_span(text, self._edit.edit_pos)
+        pattern = text[start:end]
+        if not pattern:
+            return False
+        try:
+            candidates = self._query(pattern)
+        except Exception as error:
+            self._on_error(str(error))
+            return False
+        if not candidates:
+            self._on_error(f"No contact found for `{pattern}`")
+            return False
+        self._span = (start, end)
+        if len(candidates) == 1:
+            if candidates[0].email == pattern:
+                # already completed, move on to the next field
+                return False
+            self._insert(candidates[0])
+            return True
+        self._candidates = candidates
+        maxcol = size[0]
+        caption_width = len(self._edit.caption)
+        _, cursor_row = self._edit.get_cursor_coords((maxcol,))
+        # urwid.Button decorates its label with "< " and " >"
+        width = max(len(str(c)) for c in candidates) + 4
+        self._pop_up_params = {
+            "left": caption_width,
+            "top": cursor_row + 1,
+            "overlay_width": max(1, min(width, maxcol - caption_width)),
+            "overlay_height": min(len(candidates), self.max_height),
+        }
+        self.open_pop_up()
+        return True
+
+    def _insert(self, contact) -> None:
+        text = self._edit.get_edit_text()
+        start, end = self._span
+        self._edit.set_edit_text(text[:start] + contact.email + text[end:])
+        self._edit.set_edit_pos(start + len(contact.email))
+
+    def create_pop_up(self):
+        def on_select(contact):
+            self._insert(contact)
+            self.close_pop_up()
+
+        pop_up = CompletionList(self._candidates, on_select)
+        urwid.connect_signal(pop_up, "close", lambda _: self.close_pop_up())
+        return pop_up
+
+    def get_pop_up_parameters(self):
+        return self._pop_up_params

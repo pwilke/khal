@@ -10,6 +10,10 @@ may want to subscribe to `GitHub's tag feed
 0.14.2
 ======
 unreleased
+* NEW ikhal: complete attendee email addresses with :kbd:`tab` in the event
+  editor, using an external address book command configured in
+  ``[default] attendee_query_command`` (e.g. ``mu cfind --format=mutt-ab``,
+  ``khard email --parsable`` or ``abook --mutt-query``)
 * FIX ``khal import --format``/``-f`` was accepted and then ignored, always
   falling back to ``view.event_format``
 

@@ -412,6 +412,11 @@ In the event editor, you can
 * in the date and time fields you can increment and decrement the number under
   the cursor with :kbd:`ctrl+a` and :kbd:`ctrl+x` (time in 15 minute steps)
 * in the date fields you can access a miniature calendar by pressing `enter`
+* in the attendees field, pressing :kbd:`tab` completes the email address under
+  the cursor from your address book if :ref:`attendee_query_command
+  <default-attendee_query_command>` is configured, e.g. ``attendee_query_command
+  = mu cfind --format=mutt-ab``. If several contacts match, pick one from the
+  list with :kbd:`enter` (:kbd:`esc` cancels)
 * activate actions by pressing :kbd:`enter` on text enclosed by angled brackets, e.g.
   :guilabel:`< Save >` (sometimes this might open a pop up)
 
