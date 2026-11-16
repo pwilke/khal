@@ -183,6 +183,10 @@ other = force_list(default=list('o'))
 # open a text field to start a search for events
 search = force_list(default=list('/'))
 
+# open a menu to toggle which calendars are currently displayed
+# (enter remembers the choice for the next start, p applies it for this session only)
+calendars = force_list(default=list('c'))
+
 # show logged messages
 log = force_list(default=list('L'))
 
@@ -324,6 +328,54 @@ multiple_on_overflow = boolean(default=False)
 # actually disables highlighting for events that should use the
 # default color.
 default_color = color(default='')
+
+# While ikhal is running, the `calendars` keybinding (**c** by default) opens a
+# menu to choose which calendars are displayed. Pressing **enter** in the menu
+# remembers the selection for the next start, **p** applies it for the current
+# session only.
+#
+# Calendar profiles can be declared here. Each profile is a named set of
+# calendars that a hotkey loads into the menu. Pressing **S** and then a
+# profile's hotkey saves the calendars currently checked in the menu to that
+# profile; the saved selection is stored in *$XDG_DATA_HOME/khal* (most likely
+# *~/.local/share/khal*) and takes precedence over the calendars listed here.
+# `default_profile` picks the profile ikhal starts with.
+#
+# Example:
+#
+# .. highlight:: ini
+#
+# ::
+#
+#  [ikhal]
+#  default_profile = pro
+#  [[profiles]]
+#  [[[perso]]]
+#  key = 1
+#  calendars = perso, family
+#  [[[pro]]]
+#  key = 2
+#  calendars = work, seminars
+#  [[[all]]]
+#  key = 0
+#  calendars = *
+[ikhal]
+
+# The calendars ikhal starts with. If not set, ikhal starts with the calendars
+# chosen the last time the menu was confirmed with **enter**.
+default_profile = string(default=None)
+
+[[profiles]]
+
+[[[__many__]]]
+
+# The key that loads this profile in the calendar menu. The keys space, enter,
+# esc, a, p, q, S and the arrow keys are used by the menu itself.
+key = string(default=None)
+
+# The calendars this profile shows, until a selection is saved to it from the
+# menu. Use `*` for all calendars.
+calendars = force_list(default=list())
 
 # Override ikhal's color theme with a custom palette. This is useful to style
 # certain elements of ikhal individually.

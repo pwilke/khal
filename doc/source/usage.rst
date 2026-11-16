@@ -419,6 +419,27 @@ Pressing :kbd:`esc` will cancel the current action and/or take you back to the
 previously shown pane (i.e. what you see when you open ikhal), if you are at the
 start pane, ikhal will quit on pressing :kbd:`esc` again.
 
+While ikhal is running, the ``calendars`` keybinding (:kbd:`c` by default) opens
+a menu to choose which calendars are displayed. In this menu, you can
+
+* check or uncheck the focused calendar with :kbd:`space`, or all calendars
+  with :kbd:`a`
+* apply the selection with :kbd:`enter`; the checked calendars are remembered
+  and displayed again the next time ikhal starts
+* apply the selection with :kbd:`p` (as in peek) for the current session only,
+  without remembering it
+* cancel with :kbd:`esc` or :kbd:`q`, leaving the display unchanged
+* load a profile, a named set of calendars configured in the ``[ikhal]``
+  section, with its key
+* save the checked calendars to a profile with :kbd:`S` followed by the
+  profile's key, the saved selection takes precedence over the calendars
+  configured for that profile
+
+ikhal starts by displaying the calendars remembered from the last session (or
+all calendars the first time). A configured ``default_profile`` overrides this,
+as do :option:`-a` / :option:`-d`. Every configured calendar is always available
+in the runtime menu, so a calendar hidden this way can be shown again from there.
+
 
 new
 ***

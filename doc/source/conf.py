@@ -88,6 +88,13 @@ with open("configspec.rst", "w") as f:
                 f.write("\n")
                 for key, comment in sorted(spec[secname]["__many__"].comments.items()):
                     write_section(spec[secname]["__many__"][key], secname, key, comment, f)
+            elif "__many__" in getattr(spec[secname][key], "sections", []):
+                # a named subsection holding sections, like [ikhal] [[profiles]]
+                many = spec[secname][key]["__many__"]
+                f.write("\n".join([line[2:] for line in spec[secname][key].comments["__many__"]]))
+                f.write("\n")
+                for subkey, comment in sorted(many.comments.items()):
+                    write_section(many[subkey], f"{secname}-{key}", subkey, comment, f)
             else:
                 write_section(spec[secname][key], secname, key, comment, f)
 

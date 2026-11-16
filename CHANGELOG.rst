@@ -12,6 +12,14 @@ may want to subscribe to `GitHub's tag feed
 unreleased
 * FIX ``khal import --format``/``-f`` was accepted and then ignored, always
   falling back to ``view.event_format``
+* NEW choose which calendars ikhal displays at runtime with the new
+  ``calendars`` keybinding (``c`` by default); :kbd:`enter` remembers the
+  selection for the next start, :kbd:`p` applies it for the session only.
+  ikhal starts by restoring the last remembered selection (or all calendars),
+  and loads every configured calendar so any of them can be shown again
+* NEW calendar profiles in the new ``[ikhal]`` config section, loaded and
+  saved from the calendar menu with hotkeys; ``default_profile`` picks the one
+  ikhal starts with
 
 0.14.1
 ======

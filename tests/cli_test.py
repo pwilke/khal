@@ -740,6 +740,86 @@ def test_interactive_command(runner, monkeypatch):
     assert result.output.strip() == token
 
 
+@pytest.fixture
+def fake_interactive_ui(monkeypatch):
+    """Record the calendars ikhal would display on startup."""
+    shown = {}
+
+    def fake_interactive(collection, conf):
+        # the collection holds every configured calendar; `active_names` is the
+        # subset ikhal actually displays (and the runtime menu can change).
+        shown["calendars"] = set(collection.active_names)
+
+    monkeypatch.setattr("khal.controllers.interactive", fake_interactive)
+    return shown
+
+
+def _write_last_selection(runner, shown, hidden):
+    path = runner.xdg_data_home.join("khal").join("ikhal_hidden_calendars.json")
+    path.write(json.dumps({"shown": list(shown), "hidden": list(hidden)}), ensure=True)
+
+
+@pytest.mark.parametrize("cmd", [[], ["interactive"]])
+def test_interactive_startup_selection(runner, fake_interactive_ui, cmd):
+    runner = runner(days=2)
+    main = main_khal if cmd else main_ikhal
+
+    # no startup menu: ikhal shows every calendar by default
+    result = runner.invoke(main, cmd)
+    assert not result.exception, result.output
+    assert fake_interactive_ui["calendars"] == {"one", "two", "three"}
+
+    # -a / -d set the initially displayed calendars
+    result = runner.invoke(main, cmd + ["-d", "one"])
+    assert not result.exception, result.output
+    assert fake_interactive_ui["calendars"] == {"two", "three"}
+
+    # otherwise the selection remembered from the last session is restored
+    _write_last_selection(runner, shown=["two"], hidden=["one", "three"])
+    result = runner.invoke(main, cmd)
+    assert not result.exception, result.output
+    assert fake_interactive_ui["calendars"] == {"two"}
+
+
+PROFILES = """
+[ikhal]
+default_profile = {default_profile}
+[[profiles]]
+[[[duo]]]
+key = 1
+calendars = one, three
+[[[empty]]]
+calendars = nope
+"""
+
+
+@pytest.mark.parametrize("cmd", [[], ["interactive"]])
+def test_interactive_default_profile(runner, fake_interactive_ui, cmd):
+    runner = runner(days=2)
+    runner.config_file.write(PROFILES.format(default_profile="duo"), mode="a")
+    main = main_khal if cmd else main_ikhal
+
+    # the configured default_profile decides what is shown on startup
+    result = runner.invoke(main, cmd)
+    assert not result.exception, result.output
+    assert fake_interactive_ui["calendars"] == {"one", "three"}
+
+    # -a / -d still override it
+    result = runner.invoke(main, cmd + ["-d", "one"])
+    assert not result.exception, result.output
+    assert fake_interactive_ui["calendars"] == {"two", "three"}
+
+
+def test_interactive_unknown_default_profile_shows_all(runner, fake_interactive_ui):
+    runner = runner(days=2)
+    runner.config_file.write(PROFILES.format(default_profile="nope"), mode="a")
+
+    # an unknown or empty default_profile falls back to the remembered selection
+    result = runner.invoke(main_ikhal, [])
+    assert not result.exception, result.output
+    assert fake_interactive_ui["calendars"] == {"one", "two", "three"}
+
+
 def test_color_option(runner):
     runner = runner(days=2)
 

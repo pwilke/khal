@@ -1196,7 +1196,51 @@ class ClassicView(Pane):
         binds = self._conf["keybindings"]
         if key in binds["search"]:
             self.search()
+        elif key in binds["calendars"]:
+            self.choose_calendars()
+            return None
         return super().keypress(size, key)
+
+    def choose_calendars(self):
+        """open a dialog to toggle which calendars are currently displayed
+
+        Pressing enter remembers the selection for the next start, p applies it
+        for this session only; profiles can be loaded and saved as usual.
+        """
+        from khal import calendar_profiles
+
+        from .calendar_select import make_selector
+
+        names = list(self.collection.names)
+        if len(names) <= 1:
+            self.window.alert("Only one calendar configured.")
+            return
+
+        def apply(selection, remember):
+            self.collection.activate(selection)
+            if remember:
+                calendar_profiles.save_last_selection(self._conf, selection, names)
+            self.window.backtrack()
+            self.eventscolumn.base_widget.update(None, None, everything=True)
+            shown = f"Showing {len(selection)} of {len(names)} calendars"
+            self.window.alert(shown + (", remembered for next start." if remember else "."))
+
+        selector = make_selector(
+            self._conf,
+            names,
+            checked=self.collection.active_names,
+            on_select=apply,
+            on_cancel=self.window.backtrack,
+        )
+        overlay = urwid.Overlay(
+            selector,
+            self,
+            align="center",
+            width=("relative", 60),
+            valign=("relative", 50),
+            height=("relative", 70),
+        )
+        self.window.open(overlay)
 
     def search(self):
         """create a search dialog and display it"""

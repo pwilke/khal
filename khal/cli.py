@@ -354,20 +354,46 @@ def import_ics(ctx, ics, include_calendar, batch, random_uid, format):
     sys.exit(rvalue)
 
 
+def _initial_selection(conf, names):
+    """The calendars ikhal starts with, before the runtime calendar menu.
+
+    The configured `default_profile` wins, otherwise the selection remembered
+    from the last session (which falls back to all calendars).
+    """
+    from . import calendar_profiles
+
+    default_profile = conf["ikhal"]["default_profile"]
+    profiles = calendar_profiles.get_profiles(conf)
+    if default_profile is not None and default_profile in profiles:
+        selection = calendar_profiles.profile_selection(conf, profiles[default_profile], names)
+        if selection:
+            return selection
+    return calendar_profiles.last_selection(conf, names)
+
+
+def _interactive(ctx, include_calendar, exclude_calendar, mouse):
+    conf = ctx.obj["conf"]
+    if mouse is not None:
+        conf["default"]["enable_mouse"] = mouse
+    selection = multi_calendar_select(ctx, include_calendar, exclude_calendar)
+    names = list(conf["calendars"])
+    if selection is None:
+        selection = _initial_selection(conf, names)
+    # Build with every configured calendar so the runtime calendar menu can
+    # toggle any of them, then restrict the initial display to `selection`.
+    collection = build_collection(conf, None)
+    if selection:
+        collection.activate(selection)
+    controllers.interactive(collection, conf)
+
+
 @cli.command()
 @multi_calendar_option
 @mouse_option
 @click.pass_context
 def interactive(ctx, include_calendar, exclude_calendar, mouse):
     """Interactive UI. Also launchable via `ikhal`."""
-    if mouse is not None:
-        ctx.obj["conf"]["default"]["enable_mouse"] = mouse
-    controllers.interactive(
-        build_collection(
-            ctx.obj["conf"], multi_calendar_select(ctx, include_calendar, exclude_calendar)
-        ),
-        ctx.obj["conf"],
-    )
+    _interactive(ctx, include_calendar, exclude_calendar, mouse)
 
 
 @click.command()
@@ -378,14 +404,7 @@ def interactive(ctx, include_calendar, exclude_calendar, mouse):
 def interactive_cli(ctx, config, include_calendar, exclude_calendar, mouse):
     """Interactive UI. Also launchable via `khal interactive`."""
     prepare_context(ctx, config)
-    if mouse is not None:
-        ctx.obj["conf"]["default"]["enable_mouse"] = mouse
-    controllers.interactive(
-        build_collection(
-            ctx.obj["conf"], multi_calendar_select(ctx, include_calendar, exclude_calendar)
-        ),
-        ctx.obj["conf"],
-    )
+    _interactive(ctx, include_calendar, exclude_calendar, mouse)
 
 
 @cli.command()

@@ -124,6 +124,29 @@ class CalendarCollection:
         return self._calendars.keys()
 
     @property
+    def active_names(self) -> list[str]:
+        """names of the calendars currently queried for events
+
+        This is a subset of :attr:`names`. It only governs which calendars
+        event queries (and therefore the ikhal display) return; the full set
+        of calendars stays available for editing and database updates.
+        """
+        return list(self._backend.calendars)
+
+    def activate(self, names: Iterable[str]) -> None:
+        """restrict event queries to `names`
+
+        `names` must be a non-empty subset of the configured calendars; unknown
+        names are ignored. Only affects what event queries return, not which
+        calendars can be edited or are kept up to date in the database.
+        """
+        wanted = set(names)
+        active = [name for name in self._calendars if name in wanted]
+        if not active:
+            raise ValueError("at least one calendar must stay active")
+        self._backend.calendars = active
+
+    @property
     def default_calendar_name(self) -> str | None:
         return self._default_calendar_name
 

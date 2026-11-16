@@ -70,6 +70,38 @@ class TestCalendar:
         assert len(list(coll.get_events_on(yesterday))) == 0
         assert len(list(vdirs[cal1].list())) == 1
 
+    def test_activate_filters_queries(self, coll_vdirs):
+        coll, _vdirs = coll_vdirs
+        coll.insert(coll.create_event_from_ics(event_today, cal1))
+        coll.insert(coll.create_event_from_ics(event_today, cal2))
+
+        # by default every calendar is active
+        assert set(coll.active_names) == set(coll.names)
+        assert {e.calendar for e in coll.get_events_on(today)} == {cal1, cal2}
+        assert set(coll.get_calendars_on(today)) == {cal1, cal2}
+
+        coll.activate([cal1])
+        assert coll.active_names == [cal1]
+        assert {e.calendar for e in coll.get_events_on(today)} == {cal1}
+        assert coll.get_calendars_on(today) == [cal1]
+
+        # unknown names are ignored, config order is preserved
+        coll.activate({cal2, cal1, "does-not-exist"})
+        assert coll.active_names == [cal1, cal2]
+        assert {e.calendar for e in coll.get_events_on(today)} == {cal1, cal2}
+
+        # a hidden calendar is still editable and kept up to date
+        assert cal3 in coll.writable_names
+
+    def test_activate_rejects_empty(self, coll_vdirs):
+        coll, _vdirs = coll_vdirs
+        with pytest.raises(ValueError):
+            coll.activate([])
+        with pytest.raises(ValueError):
+            coll.activate(["does-not-exist"])
+        # the active set is left untouched on a rejected call
+        assert set(coll.active_names) == set(coll.names)
+
     def test_sanity(self, coll_vdirs):
         coll, _vdirs = coll_vdirs
         mtimes = {}
